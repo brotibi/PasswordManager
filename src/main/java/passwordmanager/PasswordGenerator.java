@@ -1,4 +1,4 @@
-package passwordmanager;
+package main.java.passwordmanager;
 
 //Author: Justin Raynor
 //Public class that creates a user defined number of passwords of user defined strength,
@@ -60,7 +60,7 @@ public class PasswordGenerator {
         return password.toString();
     }
 
-    private static int[] concatenate(int[] arr1, int[] arr2) {
+    private int[] concatenate(int[] arr1, int[] arr2) {
         int len1 = arr1.length;
         int len2 = arr2.length;
 
@@ -89,24 +89,24 @@ public class PasswordGenerator {
 
         if (contains_digits) {
             int[] ascii_digits = new int[]{48, 49, 50, 51, 52, 53, 54, 55, 56, 57};
-            possible_ascii_chars = PasswordGenerator.concatenate(possible_ascii_chars, ascii_digits);
+            possible_ascii_chars = concatenate(possible_ascii_chars, ascii_digits);
         }
         if (contains_special_characters) {
             //remove ascii values for special characters not allowed in password
             int[] ascii_special_chars = new int[]{33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 58, 59, 60, 61, 62, 63, 64, 91, 92, 93, 94, 95, 96, 123, 124, 125, 126};
-            possible_ascii_chars = PasswordGenerator.concatenate(possible_ascii_chars, ascii_special_chars);
+            possible_ascii_chars = concatenate(possible_ascii_chars, ascii_special_chars);
         }
         if (contains_lower_case_letters) {
             int[] ascii_lower_case_letters = new int[]{97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122};
-            possible_ascii_chars = PasswordGenerator.concatenate(possible_ascii_chars, ascii_lower_case_letters);
+            possible_ascii_chars = concatenate(possible_ascii_chars, ascii_lower_case_letters);
         }
         if (contains_upper_case_letters) {
             int[] ascii_upper_case_letters = new int[]{65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90};
-            possible_ascii_chars = PasswordGenerator.concatenate(possible_ascii_chars, ascii_upper_case_letters);
+            possible_ascii_chars = concatenate(possible_ascii_chars, ascii_upper_case_letters);
         }
         if (contains_space) {
             int[] ascii_space = new int[]{32};
-            possible_ascii_chars = PasswordGenerator.concatenate(possible_ascii_chars, ascii_space);
+            possible_ascii_chars = concatenate(possible_ascii_chars, ascii_space);
         }
 
         //random number between 0 and length of possible ascii characters array
