@@ -7,7 +7,7 @@ package passwordmanager;
 
 public class PasswordGenerator {
     //length of password
-    public int length = 15;
+    public int length = 18;
 
     // What characters may appear in the password
     public boolean contains_digits = true;
