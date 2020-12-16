@@ -36,6 +36,9 @@ public class CryptoIfc {
      */
     public byte[] encrypt(String plaintext, String keyStr) {
         try {
+            // Note that here, the key is used as its own salt in the hash function. When hashing passwords, this is a
+            // terrible idea because it defeats the purpose of salt. Here, however, it's fine because this key is not
+            // stored in the file, so the attacker could only ever access it through a memory dump
             Key aesKey = new SecretKeySpec(createhash(keyStr, keyStr.getBytes()), "AES");
             cipher.init(Cipher.ENCRYPT_MODE, aesKey);
             return cipher.doFinal(plaintext.getBytes());
@@ -140,11 +143,12 @@ public class CryptoIfc {
 
     public static void main(String[] args) {
         CryptoIfc c = new CryptoIfc();
+        CryptoIfc c2 = new CryptoIfc();
 
         PasswordGenerator gen = new PasswordGenerator();
         gen.length = 25;
         String plaintext = gen.generate();
-        String aad = gen.generate();
+        String key = gen.generate();
 
         String phc = c.plaintextToPHCString(plaintext);
 
@@ -153,10 +157,11 @@ public class CryptoIfc {
         System.out.println("Hash: " + phc);
         System.out.println(c.verifyPHCString(plaintext, phc));
 
-        byte[] ciphertext = c.encrypt(plaintext, aad);
-        String decrypted = c.decrypt(ciphertext, aad);
+        System.out.println("\nVerifying that encrypting then decrypting a string results in the same string");
+        byte[] ciphertext = c.encrypt(plaintext, key);
+        String decrypted = c2.decrypt(ciphertext, key);  // use different CryptoIfc in decryption
 
-        System.out.println(plaintext);
-        System.out.println(decrypted);
+        System.out.println("Before: " + plaintext);
+        System.out.println("After:  " + decrypted);
     }
 }
