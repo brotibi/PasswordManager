@@ -1,4 +1,6 @@
-package passwordmanager.view;
+package main.java.passwordmanager.view;
+
+import main.java.passwordmanager.PasswordGenerator;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -6,6 +8,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /** Simple swing example from online */
 public class ExampleView implements ActionListener  {
@@ -14,10 +18,17 @@ public class ExampleView implements ActionListener  {
     private JPasswordField passwordText;
     private JPanel cpanel;
 
+    ArrayList<String> tags;
+    private JList<String> tagList;
+    private DefaultListModel<String> tagListModel;
+
     private final String CHOOSE_CMD = "choose";
     private final String OPEN_CMD = "open";
     private final String NEW_CMD = "new";
     private final String BACK_CMD = "back";
+    private final String SAVE_CMD = "save";
+    private final String DELETE_CMD = "delete";
+    private final String EDIT_CMD = "edit";
 
     public static void main(String[] args) {
         ExampleView sw = new ExampleView();
@@ -25,7 +36,7 @@ public class ExampleView implements ActionListener  {
     }
 
     public ExampleView() {
-        this.frame = new JFrame("My First Swing Example");
+        this.frame = new JFrame("Password Manager");
         this.frame.setSize(500, 200);
         this.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -38,6 +49,13 @@ public class ExampleView implements ActionListener  {
     private void run() {
         // Setting the frame visibility to true
         this.frame.setVisible(true);
+    }
+
+    private JButton makeButton(String text, String actionCmd) {
+        JButton out = new JButton(text);
+        out.addActionListener(this);
+        out.setActionCommand(actionCmd);
+        return out;
     }
 
     private void addLoginPanel(JPanel cpanel) {
@@ -86,44 +104,43 @@ public class ExampleView implements ActionListener  {
     }
 
     private void addPasswordsPanel(JPanel cpanel) {
-        // Main panel
         JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout());
 
-        // Table data. We'll eventually be reading this from a file
-        String[] columnNames = {"Tag", "Password"};
-        Object[][] data = {
-                {"gmail", "REPLACE ME"},
-                {"paypal", "t7>q6{H(}2G6=V]P"}
-        };
-
-        // JTable object that gets added to the panel
-        final JTable table = new JTable(new DefaultTableModel(data, columnNames));
-
-        // How to add new rows
-        DefaultTableModel model = (DefaultTableModel) table.getModel();
-        model.addRow(new Object[]{"bank of america", "7uA{ZRr8p#mJ=zJ7"});
-
-        // How to edit an entry
-        model.setValueAt("s5VhaWu.$3}FgX8w", 0, 1);
-
-        // make it scrollable and add it to the panel
-        JScrollPane scrollPane = new JScrollPane(table);
-        panel.add(scrollPane, BorderLayout.CENTER);
-
+        ///////////////// top panel with navigation buttons
         // buttons for creating new entries and returning to the first screen
-        JButton backButton = new JButton("Back");
-        backButton.addActionListener(this);
-        backButton.setActionCommand(BACK_CMD);
+        JButton backButton = makeButton("Back", BACK_CMD);
+        JButton saveButton = makeButton("Save", SAVE_CMD);
+        JButton addEntryButton = makeButton("New Entry", NEW_CMD);
 
-        JButton addEntryButton = new JButton("New Entry");
-        addEntryButton.addActionListener(this);
-        addEntryButton.setActionCommand(NEW_CMD);
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.add(backButton, BorderLayout.LINE_START);
+        topPanel.add(saveButton, BorderLayout.CENTER);
+        topPanel.add(addEntryButton, BorderLayout.LINE_END);
+        panel.add(topPanel, BorderLayout.PAGE_START);
 
-        // Extra panel just for the buttons
+        ///////////////////// list of tags
+        this.tagListModel = new DefaultListModel<>();
+        this.tagList = new JList<>(tagListModel);
+        DefaultListCellRenderer renderer = (DefaultListCellRenderer)tagList.getCellRenderer();
+        renderer.setHorizontalAlignment(JLabel.CENTER);
+
+        String[] tagsarr = {"gmail", "paypal"};
+        this.tags = new ArrayList<>(Arrays.asList(tagsarr));
+        tagListModel.addAll(tags);
+
+        tagList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tagList.setLayoutOrientation(JList.VERTICAL);
+        JScrollPane scroll = new JScrollPane(tagList);
+        panel.add(scroll, BorderLayout.CENTER);
+
+        //////////////////////// bottom panel with delete/edit/view buttons
+        JButton deleteButton = makeButton("Delete Selected", DELETE_CMD);
+        JButton viewEditButton = makeButton("View/Edit Selected", EDIT_CMD);
+
         JPanel bottomPanel = new JPanel(new BorderLayout());
-        bottomPanel.add(backButton, BorderLayout.LINE_START);
-        bottomPanel.add(addEntryButton, BorderLayout.LINE_END);
+        bottomPanel.add(deleteButton, BorderLayout.LINE_START);
+        bottomPanel.add(viewEditButton, BorderLayout.LINE_END);
         panel.add(bottomPanel, BorderLayout.PAGE_END);
 
         // Add the panel to the main panel
@@ -167,6 +184,22 @@ public class ExampleView implements ActionListener  {
             // Callback for pressing the button that says "New Entry"
             case NEW_CMD:
                 // TODO bring up a new GUI that allows us to add new entries to the table
+                break;
+
+            case SAVE_CMD:
+                // TODO write to the database
+                break;
+
+            case DELETE_CMD:
+                int idx = this.tagList.getSelectedIndex();
+                if (idx != -1) {
+                    this.tags.remove(idx);
+                    this.tagListModel.removeElementAt(idx);
+                }
+                break;
+
+            case EDIT_CMD:
+                // TODO bring up edit/view GUI
                 break;
         }
     }

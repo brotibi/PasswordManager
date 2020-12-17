@@ -35,11 +35,15 @@ public class CryptoIfc {
      * @return the cipher text derived from encrypting the plaintext
      */
     public byte[] encrypt(String plaintext, String keyStr) {
+        return encrypt(plaintext, keyStr, keyStr.getBytes());
+    }
+
+    public byte[] encrypt(String plaintext, String keyStr, byte[] salt) {
         try {
             // Note that here, the key is used as its own salt in the hash function. When hashing passwords, this is a
             // terrible idea because it defeats the purpose of salt. Here, however, it's fine because this key is not
             // stored in the file, so the attacker could only ever access it through a memory dump
-            Key aesKey = new SecretKeySpec(createhash(keyStr, keyStr.getBytes()), "AES");
+            Key aesKey = new SecretKeySpec(createhash(keyStr, salt), "AES");
             cipher.init(Cipher.ENCRYPT_MODE, aesKey);
             return cipher.doFinal(plaintext.getBytes());
         } catch (InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
@@ -56,8 +60,12 @@ public class CryptoIfc {
      * @return the cipher text derived from encrypting the plaintext
      */
     public String decrypt(byte[] cipherText, String keyStr) {
+        return decrypt(cipherText, keyStr, keyStr.getBytes());
+    }
+
+    public String decrypt(byte[] cipherText, String keyStr, byte[] salt) {
         try {
-            Key aesKey = new SecretKeySpec(createhash(keyStr, keyStr.getBytes()), "AES");
+            Key aesKey = new SecretKeySpec(createhash(keyStr, salt), "AES");
             cipher.init(Cipher.DECRYPT_MODE, aesKey);
             return new String(cipher.doFinal(cipherText));
         } catch (BadPaddingException | IllegalBlockSizeException | InvalidKeyException e) {
