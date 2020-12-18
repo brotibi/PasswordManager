@@ -10,8 +10,7 @@ public class Utils {
     public static byte[] toBytes(char[] chars) {
         CharBuffer charBuffer = CharBuffer.wrap(chars);
         ByteBuffer byteBuffer = StandardCharsets.UTF_8.encode(charBuffer);
-        byte[] bytes = Arrays.copyOfRange(byteBuffer.array(),
-                byteBuffer.position(), byteBuffer.limit());
+        byte[] bytes = Arrays.copyOfRange(byteBuffer.array(), byteBuffer.position(), byteBuffer.limit());
         Arrays.fill(byteBuffer.array(), (byte) 0); // clear sensitive data
         return bytes;
     }
@@ -24,13 +23,23 @@ public class Utils {
         return chars;
     }
 
-    public static String readableEncrypt(char[] plaintext, char[] key) {
-        byte[] enc = CryptoIfc.encrypt(plaintext, key);
+    /**
+     * Encrypt the given plaintext with a key derived from the given key and salt and return the encoded value
+     * in base64
+     */
+    public static String readableEncrypt(char[] plaintext, char[] key, byte[] salt) {
+        byte[] realkey = CryptoIfc.createhash(key, salt);
+        byte[] enc = CryptoIfc.encrypt(plaintext, realkey);
         return Base64.getEncoder().encodeToString(enc);
     }
 
-    public static char[] readableDecrypt(String b64cipher, char[] key) {
+    /**
+     * Given a base64 string obtained from readableEncrypt(), decode from base64, then decrypt the resulting cipher
+     * with a key derived from the given key and salt
+     */
+    public static char[] readableDecrypt(String b64cipher, char[] key, byte[] salt) {
+        byte[] realkey = CryptoIfc.createhash(key, salt);
         byte[] enc = Base64.getDecoder().decode(b64cipher);
-        return CryptoIfc.decrypt(enc, key);
+        return CryptoIfc.decrypt(enc, realkey);
     }
 }

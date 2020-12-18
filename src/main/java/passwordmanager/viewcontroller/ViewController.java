@@ -324,7 +324,7 @@ public class ViewController implements ActionListener  {
                 int idx = this.tagList.getSelectedIndex();
                 if (idx != -1) {
                     String pwCipher = this.tags.get(idx).passwordCipher;
-                    char[] decrypted = Utils.readableDecrypt(pwCipher, this.masterPasswordText.getPassword());
+                    char[] decrypted = Utils.readableDecrypt(pwCipher, this.masterPasswordText.getPassword(), this.model.getSalt());
 
                     this.tagText.setText(this.tags.get(idx).tag);
                     this.passwordText.setText(String.valueOf(decrypted));
@@ -347,7 +347,7 @@ public class ViewController implements ActionListener  {
             case SAVE_ENTRY_CMD: {
                 String tagText = this.tagText.getText();
                 String pwText = this.passwordText.getText();
-                String encrypted = readableEncrypt(pwText.toCharArray(), this.masterPasswordText.getPassword());
+                String encrypted = readableEncrypt(pwText.toCharArray(), this.masterPasswordText.getPassword(), this.model.getSalt());
 
                 TagPasswordPair entry = new TagPasswordPair(tagText, encrypted);
                 if (this.isNewEntry) {
