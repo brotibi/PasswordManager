@@ -167,7 +167,7 @@ public class CryptoIfc {
 
     public static void main(String[] args) {
         PasswordGenerator gen = new PasswordGenerator();
-        gen.length = 51;
+        gen.length = 32;
         String plaintext = gen.generate();
         String key = gen.generate();
         byte[] realKey = CryptoIfc.createhash(key.toCharArray(), CryptoIfc.randomBytes(16));

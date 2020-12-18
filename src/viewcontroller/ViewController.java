@@ -53,11 +53,6 @@ public class ViewController implements ActionListener {
     // Global control signals
     private boolean isNewEntry = true;
 
-    public static void main(String[] args) {
-        ViewController sw = new ViewController();
-        sw.run();
-    }
-
     public ViewController() {
         this.model = new Model();
 
@@ -72,7 +67,7 @@ public class ViewController implements ActionListener {
         addViewEntryPanel(cpanel);
     }
 
-    private void run() {
+    public void run() {
         // Setting the frame visibility to true
         this.frame.setVisible(true);
     }

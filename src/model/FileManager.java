@@ -1,75 +1,119 @@
 package model;
 
-import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.BufferedWriter;
-
 import lib.CryptoIfc;
+import lib.PasswordGenerator;
+import lib.Utils;
 
-import java.util.HashMap;
+import java.io.*;
 
-import java.util.Scanner;
+import java.io.IOException;
 
+import java.text.ParseException;
+import java.util.*;
+
+/**
+ * Manager for the password database, supporting reading and writing.
+ */
 public class FileManager {
-    private String fileName;
-    private String masterKey;
+    private String filename;
+    public String masterhash;
+    public byte[] salt;
+    public ArrayList<TagPasswordPair> db;
 
-    public FileManager(String fileName, String masterKey) {
-        this.fileName = fileName;
-        this.masterKey = masterKey;
+    public FileManager(String fileName) {
+        this.filename = fileName;
+        this.db = new ArrayList<>();
     }
 
-    public void createFile() {
-        try {
-            File myFile = new File(fileName);
+    private void parseError() throws ParseException {
+        throw new ParseException("Malformed file", 0);
+    }
 
-            if (myFile.createNewFile()) {
-                System.out.println("File created: " + myFile.getName());
-            } else {
-                System.out.println("File already exists");
+    /**
+     * Reads a pwdb file and stores the information therein in the fields of this object.
+     * @throws ParseException if the file is malformed or the read fails
+     */
+    public void read() throws ParseException {
+        BufferedReader rd;
+        try {
+            rd = new BufferedReader(new FileReader(this.filename));
+            this.masterhash = rd.readLine();
+            if (masterhash == null) { parseError(); }
+
+            String saltb64 = rd.readLine();
+            if (saltb64 == null) { parseError(); }
+            this.salt = Base64.getDecoder().decode(saltb64);
+
+            String line = rd.readLine();
+            while (line != null) {
+                String[] spl = line.split("\\$");
+
+                if (spl.length != 2) { parseError(); }
+
+                String tagStr = spl[0];
+                String pwStr = spl[1];
+                this.db.add(new TagPasswordPair(tagStr, pwStr));
+
+                line = rd.readLine();
             }
         } catch (IOException e) {
-            System.out.println("An error occurred.");
-            e.printStackTrace();
+            throw new ParseException("Could not read file", 0);
         }
     }
 
-    public void addPassword(String website, String hash) {
+    /**
+     * Writes the stored data to the pwdb file. Note that before this is called, masterhash and salt must be set.
+     */
+    public void write() {
         try {
-            // String str = "World";
-            BufferedWriter writer = new BufferedWriter(new FileWriter(fileName, true));
+            File fout = new File(this.filename);
+            FileOutputStream fos = new FileOutputStream(fout);
 
-            writer.append(website);
-            writer.append(":");
-            writer.append(hash);
-            writer.append("\n");
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
 
-            writer.close();
-        } catch (IOException e) {
-            System.out.println("An error occurred.");
-            e.printStackTrace();
-        }
-    }
+            bw.write(masterhash);
+            bw.newLine();
+            bw.write(Base64.getEncoder().encodeToString(this.salt));
+            bw.newLine();
 
-    public HashMap<String, String> getPasswords() {
-        try {
-            File myFile = new File(fileName);
-            Scanner reader = new Scanner(myFile);
-            while (reader.hasNextLine()) {
-                String data = reader.nextLine();
-                System.out.println(data);
+            for (TagPasswordPair pair : this.db) {
+                bw.write(pair.tag + "$" + pair.passwordCipher);
+                bw.newLine();
             }
-        } catch (FileNotFoundException e) {
-            System.out.println("An error occurred.");
+
+            bw.close();
+        } catch (IOException e) {
             e.printStackTrace();
         }
+    }
 
-        return null;
+    public static void main(String[] args) {
+        PasswordGenerator gen = new PasswordGenerator();
+        gen.length = 25;
+        String plaintext = gen.generate();
+        String key = "hello";
+        byte[] salt = CryptoIfc.randomBytes(16);
+
+        FileManager man = new FileManager("passwords.pwdb");
+        man.masterhash = CryptoIfc.plaintextToPHCString(plaintext.toCharArray());
+        man.salt = salt;
+        String[] tags = {"gmail", "paypal"};
+        String[] password = {"password", "p45$w0rd_laksdjflaksjf"};
+        for (int i = 0; i < 2; i++) {
+            man.db.add(new TagPasswordPair(
+                    Utils.readableEncrypt(tags[i].toCharArray(), key.toCharArray(), salt),
+                    Utils.readableEncrypt(password[i].toCharArray(), key.toCharArray(), salt)));
+        }
+        man.write();
+
+        FileManager man2 = new FileManager("passwords.pwdb");
+        try {
+            man2.read();
+            for (TagPasswordPair pair : man2.db) {
+                System.out.println(Utils.readableDecrypt(pair.passwordCipher, key.toCharArray(), salt));
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
     }
 }

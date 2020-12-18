@@ -1,4 +1,4 @@
-package main.java.passwordmanager;
+import viewcontroller.ViewController;
 
 /**
  * Main program entry class for creating a Model, View, and Controller, and running
@@ -6,5 +6,7 @@ package main.java.passwordmanager;
  */
 public class PasswordManager {
     public static void main(String[] args) {
+        ViewController vc = new ViewController();
+        vc.run();
     }
 }

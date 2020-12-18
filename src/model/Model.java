@@ -33,7 +33,7 @@ public class Model {
      * @param password the password used to decrypt the file
      */
     public void read(String filename, char[] password) throws ParseException {
-        MyFileManager mngr = new MyFileManager(filename);
+        FileManager mngr = new FileManager(filename);
         mngr.read();
 
         if (!CryptoIfc.verifyPHCString(password, mngr.masterhash)) {
@@ -55,7 +55,7 @@ public class Model {
      * @param password the password used to encrypt the file
      */
     public void write(String filename, char[] password) {
-        MyFileManager mngr = new MyFileManager(filename);
+        FileManager mngr = new FileManager(filename);
         mngr.masterhash = CryptoIfc.plaintextToPHCString(password);
         mngr.salt = this.salt;
         mngr.db.clear();
