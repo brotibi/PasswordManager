@@ -1,7 +1,8 @@
-package main.java.passwordmanager.view;
+package main.java.passwordmanager.viewcontroller;
 
 import main.java.passwordmanager.PasswordGenerator;
-import main.java.passwordmanager.model.CryptoIfc;
+import main.java.passwordmanager.Utils;
+import main.java.passwordmanager.model.Model;
 import main.java.passwordmanager.model.TagPasswordPair;
 
 import javax.swing.*;
@@ -10,14 +11,14 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
 
-/** Simple swing example from online */
-public class View implements ActionListener  {
-    CryptoIfc crypto;
-    private final String MASTERPW = "password";  // TODO remove this with real master pw provided by user
+import static main.java.passwordmanager.Utils.readableEncrypt;
+
+/** View and Controller for the password manager app **/
+public class ViewController implements ActionListener  {
+    Model model;
 
     private JFrame frame;
     private JPanel cpanel;
@@ -28,7 +29,7 @@ public class View implements ActionListener  {
     private JFileChooser fileChooser;
 
     // Second panel objects that need to be visible to callbacks
-    ArrayList<TagPasswordPair> tags;
+    private ArrayList<TagPasswordPair> tags;
     private JList<String> tagList;
     private DefaultListModel<String> tagListModel;
 
@@ -52,12 +53,12 @@ public class View implements ActionListener  {
     private boolean isNewEntry = true;
 
     public static void main(String[] args) {
-        View sw = new View();
+        ViewController sw = new ViewController();
         sw.run();
     }
 
-    public View() {
-        this.crypto = new CryptoIfc();
+    public ViewController() {
+        this.model = new Model();
 
         this.frame = new JFrame("Password Manager");
         this.frame.setSize(500, 200);
@@ -128,21 +129,11 @@ public class View implements ActionListener  {
         cpanel.add(panel);
     }
 
-    private void addTagPasswordPairs() {
+    private void showTagPasswordPairs() {
         this.tagListModel.removeAllElements();
         for (TagPasswordPair pair : this.tags) {
             tagListModel.addElement(pair.tag);
         }
-    }
-
-    private String readableEncrypt(String plaintext) {
-        byte[] enc = this.crypto.encrypt(plaintext, MASTERPW);
-        return Base64.getEncoder().encodeToString(enc);
-    }
-
-    private String readableDecrypt(String b64cipher) {
-        byte[] enc = Base64.getDecoder().decode(b64cipher);
-        return this.crypto.decrypt(enc, MASTERPW);
     }
 
     private void addPasswordListPanel(JPanel cpanel) {
@@ -166,12 +157,6 @@ public class View implements ActionListener  {
         this.tagList = new JList<>(tagListModel);
         DefaultListCellRenderer renderer = (DefaultListCellRenderer)tagList.getCellRenderer();
         renderer.setHorizontalAlignment(JLabel.CENTER);
-
-        // TODO obtain this from the model instead
-        this.tags = new ArrayList<>();
-        tags.add(new TagPasswordPair("gmail", readableEncrypt("password for gmail")));
-        tags.add(new TagPasswordPair("paypal", readableEncrypt("p@5$w0rD_4_P4Yp41")));
-        addTagPasswordPairs(); // uses this.tags
 
         tagList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tagList.setLayoutOrientation(JList.VERTICAL);
@@ -247,12 +232,12 @@ public class View implements ActionListener  {
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(ActionEvent actionEvent) {
         /* Callbacks for when buttons are pressed */
 
-        switch (e.getActionCommand()) {
+        switch (actionEvent.getActionCommand()) {
             // Callback for pressing the button that says "Choose"
-            case CHOOSE_CMD:
+            case CHOOSE_CMD: {
                 int returnVal = this.fileChooser.showOpenDialog(this.cpanel);
 
                 if (returnVal == JFileChooser.APPROVE_OPTION) {
@@ -260,31 +245,49 @@ public class View implements ActionListener  {
                     this.filenameText.setText(file.getAbsolutePath());
                 }
                 break;
+            }
 
             // Callback for pressing the button that says "Open"
-            case OPEN_CMD:
+            case OPEN_CMD: {
                 String filename = this.filenameText.getText();
                 File file = new File(filename);
 
-                if (file.exists() && !getFileExtension(filename).equalsIgnoreCase("pwdb")) {
-                    JOptionPane.showMessageDialog(null, "Invalid file");
+                // TODO remove after done debugging
+                if (true) {
+                    try {
+                        this.model.read(filename, this.masterPasswordText.getPassword());
+                        this.tags = model.getDatabaseInfo();
+                        showTagPasswordPairs(); // uses this.tags
+                        ((CardLayout) this.cpanel.getLayout()).next(this.cpanel);
+                    } catch (ParseException e) {
+                        JOptionPane.showMessageDialog(null, "Error parsing database");
+                    }
                     break;
                 }
-                else if (!file.exists() && !filename.equals("")) {
-                    // TODO create new pwdb file
+
+                if (file.exists()) {
+                    if (getFileExtension(filename).equalsIgnoreCase("pwdb")) {
+                        try {
+                            this.model.read(filename, this.masterPasswordText.getPassword());
+                            this.tags = model.getDatabaseInfo();
+                            showTagPasswordPairs(); // uses this.tags
+                            ((CardLayout) this.cpanel.getLayout()).next(this.cpanel);
+                        } catch (ParseException e) {
+                            JOptionPane.showMessageDialog(null, "Error parsing database");
+                        }
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Invalid file");
+                    }
+                } else {
+                    if (getFileExtension(filename).equalsIgnoreCase("pwdb")) {
+                        ((CardLayout) this.cpanel.getLayout()).next(this.cpanel);
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Invalid file");
+                    }
                 }
 
-                // If we guess the password right, then move to the next panel
-                if (String.valueOf(this.masterPasswordText.getPassword()).equals(MASTERPW)) {
-                    ((CardLayout)this.cpanel.getLayout()).next(this.cpanel);
-                }
-                else {
-                    JOptionPane.showMessageDialog(null, "Incorrect password");
-                }
-
-                // Here's how we get the password
-                // String.valueOf(this.passwordText.getPassword());
                 break;
+            }
 
             // Callback for pressing the button that says "Back"
             case BACK_CMD:
@@ -301,8 +304,10 @@ public class View implements ActionListener  {
                 ((CardLayout)this.cpanel.getLayout()).next(this.cpanel);
                 break;
 
+            // Callback for pressing the button that says "Save"
             case SAVE_ALL_CMD:
-                // TODO write to the database
+                this.model.setDatabaseInfo(this.tags);
+                this.model.write(this.filenameText.getText(), this.masterPasswordText.getPassword());
                 break;
 
             case DELETE_CMD: {
@@ -319,10 +324,10 @@ public class View implements ActionListener  {
                 int idx = this.tagList.getSelectedIndex();
                 if (idx != -1) {
                     String pwCipher = this.tags.get(idx).passwordCipher;
-                    String decrypted = readableDecrypt(pwCipher);
+                    char[] decrypted = Utils.readableDecrypt(pwCipher, this.masterPasswordText.getPassword());
 
                     this.tagText.setText(this.tags.get(idx).tag);
-                    this.passwordText.setText(decrypted);
+                    this.passwordText.setText(String.valueOf(decrypted));
 
                     ((CardLayout) this.cpanel.getLayout()).next(this.cpanel);
                 }
@@ -342,7 +347,7 @@ public class View implements ActionListener  {
             case SAVE_ENTRY_CMD: {
                 String tagText = this.tagText.getText();
                 String pwText = this.passwordText.getText();
-                String encrypted = readableEncrypt(pwText);
+                String encrypted = readableEncrypt(pwText.toCharArray(), this.masterPasswordText.getPassword());
 
                 TagPasswordPair entry = new TagPasswordPair(tagText, encrypted);
                 if (this.isNewEntry) {
@@ -352,7 +357,7 @@ public class View implements ActionListener  {
                     this.tags.set(idx, entry);
                 }
 
-                addTagPasswordPairs();
+                showTagPasswordPairs();
                 ((CardLayout)this.cpanel.getLayout()).previous(this.cpanel);
 
                 break;

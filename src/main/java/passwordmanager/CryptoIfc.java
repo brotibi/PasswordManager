@@ -1,6 +1,4 @@
-package main.java.passwordmanager.model;
-
-import main.java.passwordmanager.PasswordGenerator;
+package main.java.passwordmanager;
 
 import javax.crypto.*;
 import javax.crypto.spec.PBEKeySpec;
@@ -13,15 +11,15 @@ import java.util.Base64;
 
 /**
  * Interface for encryption, decryption, hashing, and hash validation functions.
- *
- * TODO: read through functions and make sure that Strings are available for as little time as possible
  */
 public class CryptoIfc {
-    private Cipher cipher;
+    private static Cipher cipher;
+    private static final String encryptAlgo = "AES";
+    private static final String hashAlgo = "PBKDF2WithHmacSHA1";
 
-    public CryptoIfc() {
+    static {
         try {
-            this.cipher = Cipher.getInstance("AES");
+            cipher = Cipher.getInstance(encryptAlgo);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
             e.printStackTrace();
         }
@@ -34,18 +32,18 @@ public class CryptoIfc {
      * @param keyStr string to base the encryption key off of
      * @return the cipher text derived from encrypting the plaintext
      */
-    public byte[] encrypt(String plaintext, String keyStr) {
-        return encrypt(plaintext, keyStr, keyStr.getBytes());
+    public static byte[] encrypt(char[] plaintext, char[] keyStr) {
+        return encrypt(plaintext, keyStr, Utils.toBytes(keyStr));
     }
 
-    public byte[] encrypt(String plaintext, String keyStr, byte[] salt) {
+    public static byte[] encrypt(char[] plaintext, char[] keyStr, byte[] salt) {
         try {
             // Note that here, the key is used as its own salt in the hash function. When hashing passwords, this is a
             // terrible idea because it defeats the purpose of salt. Here, however, it's fine because this key is not
             // stored in the file, so the attacker could only ever access it through a memory dump
-            Key aesKey = new SecretKeySpec(createhash(keyStr, salt), "AES");
+            Key aesKey = new SecretKeySpec(createhash(keyStr, salt), encryptAlgo);
             cipher.init(Cipher.ENCRYPT_MODE, aesKey);
-            return cipher.doFinal(plaintext.getBytes());
+            return cipher.doFinal(Utils.toBytes(plaintext));
         } catch (InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
             e.printStackTrace();
             return new byte[]{};
@@ -59,18 +57,18 @@ public class CryptoIfc {
      * @param keyStr string to base the encryption key off of
      * @return the cipher text derived from encrypting the plaintext
      */
-    public String decrypt(byte[] cipherText, String keyStr) {
-        return decrypt(cipherText, keyStr, keyStr.getBytes());
+    public static char[] decrypt(byte[] cipherText, char[] keyStr) {
+        return decrypt(cipherText, keyStr, Utils.toBytes(keyStr));
     }
 
-    public String decrypt(byte[] cipherText, String keyStr, byte[] salt) {
+    public static char[] decrypt(byte[] cipherText, char[] keyStr, byte[] salt) {
         try {
-            Key aesKey = new SecretKeySpec(createhash(keyStr, salt), "AES");
+            Key aesKey = new SecretKeySpec(createhash(keyStr, salt), encryptAlgo);
             cipher.init(Cipher.DECRYPT_MODE, aesKey);
-            return new String(cipher.doFinal(cipherText));
+            return Utils.toChars(cipher.doFinal(cipherText));
         } catch (BadPaddingException | IllegalBlockSizeException | InvalidKeyException e) {
             e.printStackTrace();
-            return "";
+            return new char[]{};
         }
     }
 
@@ -78,7 +76,7 @@ public class CryptoIfc {
      * Generates a 16-byte salt to be used in hashing
      * @return the random salt
      */
-    public byte[] generatesalt() {
+    public static byte[] generatesalt() {
         SecureRandom random = new SecureRandom();
         byte[] salt = new byte[16];
         random.nextBytes(salt);
@@ -91,13 +89,13 @@ public class CryptoIfc {
      * @param salt salt to use in hashing
      * @return the hash
      */
-    public byte[] createhash(String plaintext, byte[] salt) {
+    public static byte[] createhash(char[] plaintext, byte[] salt) {
         int ITERATIONS = 65536;
         int KEYLEN = 128;
-        KeySpec spec = new PBEKeySpec(plaintext.toCharArray(), salt, ITERATIONS, KEYLEN);
+        KeySpec spec = new PBEKeySpec(plaintext, salt, ITERATIONS, KEYLEN);
 
         try {
-            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+            SecretKeyFactory factory = SecretKeyFactory.getInstance(hashAlgo);
             return factory.generateSecret(spec).getEncoded();
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             e.printStackTrace();
@@ -111,7 +109,7 @@ public class CryptoIfc {
      * @param plaintext plaintext to hash
      * @return the PHC string containing salt and the hashed plaintext
      */
-    public String plaintextToPHCString(String plaintext) {
+    public static String plaintextToPHCString(char[] plaintext) {
         byte[] salt = generatesalt();
         byte[] hash = createhash(plaintext, salt);
 
@@ -130,7 +128,7 @@ public class CryptoIfc {
      * @param phc PHC string generated by plaintextToPHCString()
      * @return whether the plaintext could hash to the values in the PHC string
      */
-    public boolean verifyPHCString(String plaintext, String phc) {
+    public static boolean verifyPHCString(char[] plaintext, String phc) {
         // Has format <salt>$<hash>
         String[] spl = phc.split("\\$");
 
@@ -150,26 +148,24 @@ public class CryptoIfc {
     }
 
     public static void main(String[] args) {
-        CryptoIfc c = new CryptoIfc();
-        CryptoIfc c2 = new CryptoIfc();
-
         PasswordGenerator gen = new PasswordGenerator();
         gen.length = 25;
         String plaintext = gen.generate();
         String key = gen.generate();
 
-        String phc = c.plaintextToPHCString(plaintext);
+        String phc = CryptoIfc.plaintextToPHCString(plaintext.toCharArray());
 
         System.out.println("Verifying hash matches plaintext");
         System.out.println("Password: " + plaintext);
         System.out.println("Hash: " + phc);
-        System.out.println(c.verifyPHCString(plaintext, phc));
+        System.out.println(CryptoIfc.verifyPHCString(plaintext.toCharArray(), phc));
 
         System.out.println("\nVerifying that encrypting then decrypting a string results in the same string");
-        byte[] ciphertext = c.encrypt(plaintext, key);
-        String decrypted = c2.decrypt(ciphertext, key);  // use different CryptoIfc in decryption
+        byte[] ciphertext = CryptoIfc.encrypt(plaintext.toCharArray(), key.toCharArray());
+        char[] decrypted = CryptoIfc.decrypt(ciphertext, key.toCharArray());
 
         System.out.println("Before: " + plaintext);
-        System.out.println("After:  " + decrypted);
+        System.out.println("Encrypted: " + new String(ciphertext));
+        System.out.println("After:  " + String.valueOf(decrypted));
     }
 }
