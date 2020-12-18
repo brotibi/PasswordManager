@@ -6,8 +6,10 @@ package lib;
 //TODO: create GUI for user to define values for the specified fields below.
 
 public class PasswordGenerator {
+    public static final int DEFAULT_LENGTH = 16;
+
     //length of password
-    public int length = 18;
+    public int length = PasswordGenerator.DEFAULT_LENGTH;
 
     // What characters may appear in the password
     public boolean contains_digits = true;

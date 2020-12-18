@@ -14,8 +14,10 @@ import java.io.File;
 import java.text.ParseException;
 import java.util.ArrayList;
 
-/** View and Controller for the password manager app **/
-public class ViewController implements ActionListener  {
+/**
+ * View and Controller for the password manager app
+ **/
+public class ViewController implements ActionListener {
     Model model;
 
     private JFrame frame;
@@ -34,6 +36,7 @@ public class ViewController implements ActionListener  {
     // Third panel objects that need to be visible to callbacks
     private JTextField tagText;
     private JTextField passwordText;
+    private JTextField lengthText;
 
     // Callback commands
     private final String CHOOSE_CMD = "choose";
@@ -93,11 +96,11 @@ public class ViewController implements ActionListener  {
 
         // Create label, text box, and button for choosing filename
         JLabel filenameLabel = new JLabel("Path to password database");
-        filenameLabel.setBounds(10,20, labelwidth, labelheight);
+        filenameLabel.setBounds(10, 20, labelwidth, labelheight);
         panel.add(filenameLabel);
 
         this.filenameText = new JTextField(20);
-        this.filenameText.setBounds(labelwidth + 20,20, labelwidth, labelheight);
+        this.filenameText.setBounds(labelwidth + 20, 20, labelwidth, labelheight);
         panel.add(this.filenameText);
 
         JButton fileChooserButton = makeButton("Choose", CHOOSE_CMD);
@@ -105,23 +108,23 @@ public class ViewController implements ActionListener  {
         panel.add(fileChooserButton);
 
         this.fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Open Password Database");
+        fileChooser.setDialogTitle("Choose *.pwdb file or else provide the name of one to create");
         FileNameExtensionFilter filter = new FileNameExtensionFilter("Password Database Files", "pwdb");
         fileChooser.setFileFilter(filter);
 
         // Create label and text box for entering password
         JLabel passwordLabel = new JLabel("Master password");
-        passwordLabel.setBounds(10,50, labelwidth, labelheight);
+        passwordLabel.setBounds(10, 50, labelwidth, labelheight);
         panel.add(passwordLabel);
 
         // JPasswordField hides the text you're entering
         this.masterPasswordText = new JPasswordField(20);
-        this.masterPasswordText.setBounds(labelwidth + 20,50, labelwidth, labelheight);
+        this.masterPasswordText.setBounds(labelwidth + 20, 50, labelwidth, labelheight);
         panel.add(this.masterPasswordText);
 
         // Creating login button
         JButton goButton = makeButton("Open", OPEN_CMD);
-        goButton.setBounds(10, 80, 80,  labelheight);
+        goButton.setBounds(10, 80, 80, labelheight);
         panel.add(goButton);
 
         cpanel.add(panel);
@@ -153,7 +156,7 @@ public class ViewController implements ActionListener  {
         ///////////////////// list of tags
         this.tagListModel = new DefaultListModel<>();
         this.tagList = new JList<>(tagListModel);
-        DefaultListCellRenderer renderer = (DefaultListCellRenderer)tagList.getCellRenderer();
+        DefaultListCellRenderer renderer = (DefaultListCellRenderer) tagList.getCellRenderer();
         renderer.setHorizontalAlignment(JLabel.CENTER);
 
         tagList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -206,16 +209,25 @@ public class ViewController implements ActionListener  {
 
         // Buttons
         JButton generateButton = makeButton("Generate Strong Password", GENERATE_CMD);
-        generateButton.setBounds(startX, startY + 2*yDiff, 200,  labelheight);
+        generateButton.setBounds(startX, startY + 2 * yDiff, 200, labelheight);
         panel.add(generateButton);
 
         JButton cancelButton = makeButton("Cancel", CANCEL_CMD);
-        cancelButton.setBounds(startX, startY + 3*yDiff, 80, labelheight);
+        cancelButton.setBounds(startX, startY + 3 * yDiff, 80, labelheight);
         panel.add(cancelButton);
 
         JButton saveButton = makeButton("Save", SAVE_ENTRY_CMD);
-        saveButton.setBounds(80 + xDiff, startY + 3*yDiff, 80, labelheight);
+        saveButton.setBounds(80 + xDiff, startY + 3 * yDiff, 80, labelheight);
         panel.add(saveButton);
+
+        // password generator length
+        JLabel lengthLabel = new JLabel("Password Length");
+        lengthLabel.setBounds(startX + 200 + xDiff, startY + 2 * yDiff, 150, labelheight);
+        panel.add(lengthLabel);
+
+        this.lengthText = new JTextField(20);
+        this.lengthText.setBounds(startX + 290 + 2 * xDiff, startY + 2 * yDiff, 50, labelheight);
+        panel.add(lengthText);
 
         cpanel.add(panel);
     }
@@ -223,10 +235,13 @@ public class ViewController implements ActionListener  {
     private String getFileExtension(String filename) {
         if (filename.lastIndexOf(".") != -1 && filename.lastIndexOf(".") != 0) {
             return filename.substring(filename.lastIndexOf(".") + 1);
-        }
-        else {
+        } else {
             return "";
         }
+    }
+
+    private void alert(String msg) {
+        JOptionPane.showMessageDialog(null, msg);
     }
 
     @Override
@@ -250,38 +265,25 @@ public class ViewController implements ActionListener  {
                 String filename = this.filenameText.getText();
                 File file = new File(filename);
 
-                // TODO remove after done debugging
-                if (true) {
+                if (!getFileExtension(filename).equalsIgnoreCase("pwdb")) {
+                    alert("Please select a *.pwdb file or else provide the name of one to create");
+                }
+                else if (file.exists()) {
                     try {
                         this.model.read(filename, this.masterPasswordText.getPassword());
                         this.tags = model.getDatabaseInfo();
                         showTagPasswordPairs(); // uses this.tags
                         ((CardLayout) this.cpanel.getLayout()).next(this.cpanel);
                     } catch (ParseException e) {
-                        JOptionPane.showMessageDialog(null, "Error parsing database");
+                        alert("Error parsing database");
                     }
-                    break;
                 }
-
-                if (file.exists()) {
-                    if (getFileExtension(filename).equalsIgnoreCase("pwdb")) {
-                        try {
-                            this.model.read(filename, this.masterPasswordText.getPassword());
-                            this.tags = model.getDatabaseInfo();
-                            showTagPasswordPairs(); // uses this.tags
-                            ((CardLayout) this.cpanel.getLayout()).next(this.cpanel);
-                        } catch (ParseException e) {
-                            JOptionPane.showMessageDialog(null, "Error parsing database");
-                        }
-                    } else {
-                        JOptionPane.showMessageDialog(null, "Invalid file");
-                    }
-                } else {
-                    if (getFileExtension(filename).equalsIgnoreCase("pwdb")) {
-                        ((CardLayout) this.cpanel.getLayout()).next(this.cpanel);
-                    } else {
-                        JOptionPane.showMessageDialog(null, "Invalid file");
-                    }
+                else {
+                    // TODO open new file
+                    this.model.initEmpty();
+                    this.tags = new ArrayList<>();
+                    showTagPasswordPairs(); // uses this.tags
+                    ((CardLayout) this.cpanel.getLayout()).next(this.cpanel);
                 }
 
                 break;
@@ -290,7 +292,7 @@ public class ViewController implements ActionListener  {
             // Callback for pressing the button that says "Back"
             case BACK_CMD:
                 // return to first panel where we choose a filename and enter a password
-                ((CardLayout)this.cpanel.getLayout()).first(this.cpanel);
+                ((CardLayout) this.cpanel.getLayout()).first(this.cpanel);
                 break;
 
             // Callback for pressing the button that says "New Entry"
@@ -299,7 +301,8 @@ public class ViewController implements ActionListener  {
                 this.isNewEntry = true;
                 this.tagText.setText("");
                 this.passwordText.setText("");
-                ((CardLayout)this.cpanel.getLayout()).next(this.cpanel);
+                this.lengthText.setText(Integer.toString(PasswordGenerator.DEFAULT_LENGTH));
+                ((CardLayout) this.cpanel.getLayout()).next(this.cpanel);
                 break;
 
             // Callback for pressing the button that says "Save"
@@ -326,6 +329,7 @@ public class ViewController implements ActionListener  {
 
                     this.tagText.setText(this.tags.get(idx).tag);
                     this.passwordText.setText(String.valueOf(decrypted));
+                    this.lengthText.setText(Integer.toString(PasswordGenerator.DEFAULT_LENGTH));
 
                     ((CardLayout) this.cpanel.getLayout()).next(this.cpanel);
                 }
@@ -333,13 +337,25 @@ public class ViewController implements ActionListener  {
             }
 
             case GENERATE_CMD:
-                PasswordGenerator pwGen = new PasswordGenerator();
-                String strongPw = pwGen.generate();
-                this.passwordText.setText(strongPw);
+                try {
+                    int len = Integer.parseInt(this.lengthText.getText());
+                    if (len <= 0) {
+                        alert("Invalid length");
+                        break;
+                    }
+
+                    PasswordGenerator pwGen = new PasswordGenerator();
+                    pwGen.length = len;
+                    String strongPw = pwGen.generate();
+                    this.passwordText.setText(strongPw);
+                } catch (NumberFormatException e) {
+                    alert("Invalid length");
+                }
                 break;
 
             case CANCEL_CMD:
-                ((CardLayout)this.cpanel.getLayout()).previous(this.cpanel);
+                this.passwordText.setText(""); // clear contents
+                ((CardLayout) this.cpanel.getLayout()).previous(this.cpanel);
                 break;
 
             case SAVE_ENTRY_CMD: {
@@ -356,7 +372,8 @@ public class ViewController implements ActionListener  {
                 }
 
                 showTagPasswordPairs();
-                ((CardLayout)this.cpanel.getLayout()).previous(this.cpanel);
+                this.passwordText.setText(""); // clear contents
+                ((CardLayout) this.cpanel.getLayout()).previous(this.cpanel);
 
                 break;
             }

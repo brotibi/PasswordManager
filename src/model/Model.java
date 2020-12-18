@@ -22,6 +22,11 @@ public class Model {
         this.databaseInfo = new ArrayList<>();
     }
 
+    public void initEmpty() {
+        this.databaseInfo.clear();
+        this.salt = CryptoIfc.randomBytes(16);
+    }
+
     /**
      * Reads the database at the given filename using the given password and stores the contents in databaseInof
      * @param filename the file to read (should be a *.pwdb file)
