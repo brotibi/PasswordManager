@@ -33,11 +33,20 @@ public class Model {
      * @param password the password used to decrypt the file
      */
     public void read(String filename, char[] password) throws ParseException {
-        // TODO open and parse file
+        MyFileManager mngr = new MyFileManager(filename);
+        mngr.read();
+
+        if (!CryptoIfc.verifyPHCString(password, mngr.masterhash)) {
+            throw new ParseException("Incorrect password", 0);
+        }
+
         this.databaseInfo.clear();
-        this.salt = CryptoIfc.randomBytes(16);
-        databaseInfo.add(new TagPasswordPair("gmail", Utils.readableEncrypt("password for gmail".toCharArray(), password, this.salt)));
-        databaseInfo.add(new TagPasswordPair("paypal", Utils.readableEncrypt("p@5$w0rD_4_P4Yp41".toCharArray(), password, this.salt)));
+        this.salt = mngr.salt;
+        for (TagPasswordPair pair : mngr.db) {
+            // allow tag to be decrypted since that's not the sensitive part
+            String decryptedTag = String.valueOf(Utils.readableDecrypt(pair.tag, password, this.salt));
+            databaseInfo.add(new TagPasswordPair(decryptedTag, pair.passwordCipher));
+        }
     }
 
     /**
@@ -46,7 +55,17 @@ public class Model {
      * @param password the password used to encrypt the file
      */
     public void write(String filename, char[] password) {
-        // TODO
+        MyFileManager mngr = new MyFileManager(filename);
+        mngr.masterhash = CryptoIfc.plaintextToPHCString(password);
+        mngr.salt = this.salt;
+        mngr.db.clear();
+
+        for (TagPasswordPair pair : this.databaseInfo) {
+            String encryptedTag = Utils.readableEncrypt(pair.tag.toCharArray(), password, this.salt);
+            mngr.db.add(new TagPasswordPair(encryptedTag, pair.passwordCipher));
+        }
+
+        mngr.write();
     }
 
     /** Sets the database info to the given value */

@@ -3,7 +3,6 @@ package lib;
 //Author: Justin Raynor
 //Public class that creates a user defined number of passwords of user defined strength,
 //checks if the password is unique and returns the password to the user.
-//TODO: create GUI for user to define values for the specified fields below.
 
 public class PasswordGenerator {
     public static final int DEFAULT_LENGTH = 16;

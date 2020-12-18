@@ -279,7 +279,6 @@ public class ViewController implements ActionListener {
                     }
                 }
                 else {
-                    // TODO open new file
                     this.model.initEmpty();
                     this.tags = new ArrayList<>();
                     showTagPasswordPairs(); // uses this.tags
