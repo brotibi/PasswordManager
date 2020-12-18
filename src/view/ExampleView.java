@@ -19,10 +19,10 @@ public class ExampleView implements ActionListener  {
     private final String NEW_CMD = "new";
     private final String BACK_CMD = "back";
 
-    public static void main(String[] args) {
+    /*public static void main(String[] args) {
         ExampleView sw = new ExampleView();
         sw.run();
-    }
+    }*/
 
     public ExampleView() {
         this.frame = new JFrame("My First Swing Example");
@@ -35,7 +35,7 @@ public class ExampleView implements ActionListener  {
         addPasswordsPanel(cpanel);
     }
 
-    private void run() {
+    public void run() {
         // Setting the frame visibility to true
         this.frame.setVisible(true);
     }
