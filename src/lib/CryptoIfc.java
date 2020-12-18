@@ -1,4 +1,4 @@
-package main.java.passwordmanager;
+package lib;
 
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;

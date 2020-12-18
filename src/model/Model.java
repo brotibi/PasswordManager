@@ -1,7 +1,7 @@
-package main.java.passwordmanager.model;
+package model;
 
-import main.java.passwordmanager.CryptoIfc;
-import main.java.passwordmanager.Utils;
+import lib.Utils;
+import lib.CryptoIfc;
 
 import java.text.ParseException;
 import java.util.ArrayList;

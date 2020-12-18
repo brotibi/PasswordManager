@@ -1,9 +1,9 @@
-package main.java.passwordmanager.viewcontroller;
+package viewcontroller;
 
-import main.java.passwordmanager.PasswordGenerator;
-import main.java.passwordmanager.Utils;
-import main.java.passwordmanager.model.Model;
-import main.java.passwordmanager.model.TagPasswordPair;
+import lib.PasswordGenerator;
+import lib.Utils;
+import model.Model;
+import model.TagPasswordPair;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -13,8 +13,6 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.text.ParseException;
 import java.util.ArrayList;
-
-import static main.java.passwordmanager.Utils.readableEncrypt;
 
 /** View and Controller for the password manager app **/
 public class ViewController implements ActionListener  {
@@ -347,7 +345,7 @@ public class ViewController implements ActionListener  {
             case SAVE_ENTRY_CMD: {
                 String tagText = this.tagText.getText();
                 String pwText = this.passwordText.getText();
-                String encrypted = readableEncrypt(pwText.toCharArray(), this.masterPasswordText.getPassword(), this.model.getSalt());
+                String encrypted = Utils.readableEncrypt(pwText.toCharArray(), this.masterPasswordText.getPassword(), this.model.getSalt());
 
                 TagPasswordPair entry = new TagPasswordPair(tagText, encrypted);
                 if (this.isNewEntry) {

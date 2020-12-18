@@ -4,3 +4,4 @@ target/
 src/main/java/passwordmanager/viewcontroller/CardLayoutDemo.java
 src/main/java/passwordmanager/viewcontroller/FileChooserExample.java
 src/main/java/passwordmanager/viewcontroller/SimpleTableDemo.java
+.vscode/

@@ -1,4 +1,4 @@
-package main.java.passwordmanager;
+package lib;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
